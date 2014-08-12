@@ -29,6 +29,13 @@ if (isset($_GET['action']))
 		$y = (int)$_GET['y'];
 		dbInsert("INSERT INTO comrad_vacation(`date`, `comrad_id`) VALUES ('$y-$m-$d', '".$_SESSION['active_comrad']."');");
 	}
+	if ($_GET['action'] == 'no_vacation')
+	{
+		$d = (int)$_GET['d'];
+		$m = (int)$_GET['m'];
+		$y = (int)$_GET['y'];
+		dbInsert("DELETE FROM comrad_vacation WHERE `date` = '$y-$m-$d' AND comrad_id = '".$_SESSION['active_comrad']."';");
+	}
 	header("Location: .");
 	die();
 }
