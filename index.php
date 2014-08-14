@@ -71,7 +71,7 @@ if(weekday(1, $month-1, $year) > 0)
 }
 $y = $year;
 $rosterExtra = array();
-for($m=$month-1;$m<$month+1;$m++)
+for($m=$month-1;$m<$month+2;$m++)
 {
 	for($d=1;$d<=daysInMonth($m, $y); $d++)
 	{
