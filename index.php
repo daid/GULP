@@ -28,6 +28,7 @@ if (isset($_GET['action']))
 		$m = (int)$_GET['m'];
 		$y = (int)$_GET['y'];
 		dbInsert("INSERT INTO comrad_vacation(`date`, `comrad_id`) VALUES ('$y-$m-$d', '".$_SESSION['active_comrad']."');");
+		dbInsert("DELETE FROM roster WHERE `date` = '$y-$m-$d' AND `comrad_id` = '".$_SESSION['active_comrad']."';");
 	}
 	if ($_GET['action'] == 'no_vacation')
 	{
@@ -101,7 +102,7 @@ for($m=$month-1;$m<$month+2;$m++)
 				echo "<span style='font-size: 16'>" . $res[0]->name . "</span><br>";
 			}else if ($_SESSION['active_comrad'] > 0)
 			{
-				echo "<a href='?action=take&d=$d&m=$m&y=$y'>Take</a><br>";
+				//echo "<a href='?action=take&d=$d&m=$m&y=$y'>Take</a><br>";
 			}else{
 				$comrad = findBestComradFor($d, $m, $y, $rosterExtra);
 				echo "<span style='font-size: 12'>".$comrad->name."</span><br>";
@@ -133,11 +134,17 @@ foreach($comrades as $comrad)
 	$roster = countRosterDays($comrad->ID, $day, $month, $year);
 	
 	echo "<tr><td><a href='?active_comrad=".$comrad->ID."'>".$comrad->name."</a>";
-	echo "<td>".round($roster/$active*100, 2);
+	if ($active == 0)
+		echo "<td>0";
+	else
+		echo "<td>".round($roster/$active*100, 2);
+	
 	echo "<td>".$roster." ".$active;
 }
 ?>
 </table>
+</table>
 
+Query count: <?=$_query_count?>
 </body>
 </html>

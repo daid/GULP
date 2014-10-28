@@ -1,6 +1,8 @@
 <?
 require_once "db.conf.php";
 function e($s) {return "'".mysql_real_escape_string($s)."'";}
+$_query_count = 0;
+$_query_log = array();
 
 function dbInsert($query)
 {
@@ -14,6 +16,13 @@ function dbInsert($query)
 }
 function dbQuery($query)
 {
+	global $_query_count, $_query_log;
+	$_query_count += 1;
+	if (!isset($_query_log[$query]))
+		$_query_log[$query] = 1;
+	else
+		$_query_log[$query] += 1;
+	
 	$res = mysql_query($query);
 	if ($res === false)
 	{

@@ -1,5 +1,6 @@
 <?
 require_once "db.inc.php";
+$_db_cache = array();
 
 function daysInMonth($month, $year)
 {
@@ -21,6 +22,8 @@ function monthName($month)
 }
 function isAGoodDay($day, $month, $year)
 {
+	global $_db_cache;
+	
 	//Is today a day that we GULP?
 	if (weekday($day, $month, $year) > 4) return false;
 	
@@ -28,15 +31,48 @@ function isAGoodDay($day, $month, $year)
 	if ($year < 2014) return false;
 	if ($year == 2014 && $month < 7) return false;
 	if ($year == 2014 && $month == 7 && $day < 7) return false;
-	if (count(dbQuery("SELECT * FROM `bad_day` WHERE `date` = '$year-$month-$day'")) > 0)
-		return false;
-	return true;
+	if (!isset($_db_cache['bad_day']))
+		$_db_cache['bad_day'] = array();
+	if (!isset($_db_cache['bad_day']["$year-$month-$day"]))
+		if (count(dbQuery("SELECT * FROM `bad_day` WHERE `date` = '$year-$month-$day'")) == 0)
+			$_db_cache['bad_day']["$year-$month-$day"] = true;
+		else
+			$_db_cache['bad_day']["$year-$month-$day"] = false;
+	return $_db_cache['bad_day']["$year-$month-$day"];
+}
+
+function comradVacation($id, $day, $month, $year)
+{
+	global $_db_cache;
+	if (!isset($_db_cache['comrad_vacation']))
+		$_db_cache['comrad_vacation'] = array();
+	if (!isset($_db_cache['comrad_vacation'][$id]))
+		$_db_cache['comrad_vacation'][$id] = array();
+	if (!isset($_db_cache['comrad_vacation'][$id]["$year-$month-$day"]))
+		$_db_cache['comrad_vacation'][$id]["$year-$month-$day"] = count(dbQuery("SELECT * FROM comrad_vacation WHERE comrad_id = '$id' AND `date` = '$year-$month-$day'")) > 0;
+	return $_db_cache['comrad_vacation'][$id]["$year-$month-$day"];
+}
+
+function comradRoster($day, $month, $year)
+{
+	global $_db_cache;
+	if (!isset($_db_cache['comrad_roster']))
+		$_db_cache['comrad_roster'] = array();
+	if (!isset($_db_cache['comrad_roster']["$year-$month-$day"]))
+	{
+		$res = dbQuery("SELECT * FROM roster WHERE `date` = '$year-$month-$day'");
+		if (count($res) > 0)
+			$_db_cache['comrad_roster']["$year-$month-$day"] = $res[0]->comrad_id;
+		else
+			$_db_cache['comrad_roster']["$year-$month-$day"] = -1;
+	}
+	return $_db_cache['comrad_roster']["$year-$month-$day"];
 }
 
 function countActiveDays($id, $day, $month, $year)
 {
 	//Calculate the number of days this comrad joined actively in the GULP up to the specified date.
-	
+
 	$date = explode("-", dbQuery("SELECT join_date FROM comrades WHERE ID = '$id'")[0]->join_date);
 	$y = (int)$date[0];
 	$m = (int)$date[1];
@@ -49,7 +85,7 @@ function countActiveDays($id, $day, $month, $year)
 	{
 		if (isAGoodDay($d, $m, $y))
 		{
-			if (count(dbQuery("SELECT * FROM comrad_vacation WHERE comrad_id = '$id' AND `date` = '$y-$m-$d'")) < 1)
+			if (!comradVacation($id, $d, $m, $y))
 				$count ++;
 		}
 		
@@ -84,8 +120,8 @@ function countRosterDays($id, $day, $month, $year)
 	{
 		if (isAGoodDay($d, $m, $y))
 		{
-			if (count(dbQuery("SELECT * FROM comrad_vacation WHERE comrad_id = '$id' AND `date` = '$y-$m-$d'")) < 1)
-				if (count(dbQuery("SELECT * FROM roster WHERE `date` = '$y-$m-$d' AND comrad_id = '$id'")) > 0)
+			if (!comradVacation($id, $d, $m, $y))
+				if (comradRoster($d, $m, $y) == $id)
 					$count ++;
 		}
 		
@@ -98,19 +134,9 @@ function isDirectlyAfterVacation($d, $m, $y, $comrad_id)
 {
 	do
 	{
-		$d -= 1;
-		if ($d < 1)
-		{
-			$m -= 1;
-			if ($m < 1)
-			{
-				$m = 12;
-				$y -= 1;
-			}
-			$d = daysInMonth($m, $y);
-		}
+		dayMinusOne($d, $m, $y);
 	} while(!isAGoodDay($d, $m, $y));
-	if (count(dbQuery("SELECT * FROM comrad_vacation WHERE comrad_id = '".$comrad_id."' AND `date` = '$y-$m-$d'")) > 0)
+	if (comradVacation($comrad_id, $d, $m, $y))
 		return true;
 	return false;
 }
@@ -120,7 +146,7 @@ function getComradsOn($d, $m, $y)
 	$ret = array();
 	foreach(dbQuery("SELECT * FROM comrades WHERE join_date < '$y-$m-$d'") as $comrad)
 	{
-		if (count(dbQuery("SELECT * FROM comrad_vacation WHERE comrad_id = '".$comrad->ID."' AND `date` = '$y-$m-$d'")) > 0)
+		if (comradVacation($comrad->ID, $d, $m, $y))
 			continue;
 		$ret[] = $comrad;
 	}
@@ -132,7 +158,7 @@ function findBestComradFor($d, $m, $y, $extraRoster=array())
 	$bestList = false;
 	foreach(dbQuery("SELECT * FROM comrades") as $comrad)
 	{
-		if (count(dbQuery("SELECT * FROM comrad_vacation WHERE comrad_id = '".$comrad->ID."' AND `date` = '$y-$m-$d'")) > 0)
+		if (comradVacation($comrad->ID, $d, $m, $y))
 			continue;
 		if (isDirectlyAfterVacation($d, $m, $y, $comrad->ID))
 			continue;

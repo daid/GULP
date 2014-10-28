@@ -70,6 +70,30 @@ if (count($roster) < 0)
 	die();
 $roster = $roster[0];
 
+$dd = $d; $mm = $m; $yy = $y;
+dayMinusOne($dd, $mm, $yy);
+while(!isAGoodDay($dd, $mm, $yy))
+{
+	dayMinusOne($dd, $mm, $yy);
+}
+
+$prev_roster = dbQuery("SELECT * FROM roster, comrades WHERE `date` = '$yy-$mm-$dd' AND roster.comrad_id = comrades.ID");
+if (count($prev_roster) < 0)
+	die();
+$prev_roster = $prev_roster[0];
+
+$dd = $d; $mm = $m; $yy = $y;
+dayPlusOne($dd, $mm, $yy);
+while(!isAGoodDay($dd, $mm, $yy))
+{
+	dayPlusOne($dd, $mm, $yy);
+}
+
+$next_roster = dbQuery("SELECT * FROM roster, comrades WHERE `date` = '$yy-$mm-$dd' AND roster.comrad_id = comrades.ID");
+if (count($next_roster) < 0)
+	die();
+$next_roster = $next_roster[0];
+
 $days = array("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
 
 $c = "<html><body>";
@@ -77,6 +101,8 @@ $c .= "<h2>Hello comrad $roster->name</h2>";
 $c .= "You have been carefully selected to supply all of us with food on: ".$days[weekDay($d, $m, $y)]." $y-$m-$d<br>";
 $c .= "You will be dining with ".count(getComradsOn($d, $m, $y))." comrades<br>";
 $c .= "This is your reminder email.<br>";
+$c .= "<br>";
+$c .= "The payment pas should be at: $prev_roster->name<br>and the next person to get the pas is $next_roster->name<br>3023<br>";
 $c .= "<br>";
 $c .= "One for the lunch, lunch for all!<br>";
 $c .= "</body></html>";
@@ -105,7 +131,7 @@ if ($roster->confirmed)
 		echo "Error sending mail: " . $mail->ErrorInfo;
 	}else{
 		echo "Done.<br>";
-		dbInsert("UPDATE roster SET confirmed = 1 WHERE `date` = '$y-$m-$d'");
+		dbInsert("UPDATE roster SET confirmed = 1 WHERE `date` = '$roster->date'");
 	}
 }
 ?>
