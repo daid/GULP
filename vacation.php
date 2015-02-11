@@ -71,9 +71,9 @@ for($w=0;$w<12;$w++)
 			echo "<td class='".$class."'>".$d;
 			if (comradVacation($id, $d, $m, $y))
 			{
-				echo "<br><a href='$url&action=no_vacation&d=$d&m=$m&y=$y'>No Vacation :(</a>";
+				echo "<br><a href='$url&action=no_vacation&d=$d&m=$m&y=$y'>Cancel vacation :(</a>";
 			}else{
-				echo "<br><a href='$url&action=vacation&d=$d&m=$m&y=$y'>Vacation</a>";
+				echo "<br><a href='$url&action=vacation&d=$d&m=$m&y=$y'>Plan vacation</a>";
 			}
 		}
 		dayPlusOne($d, $m, $y);

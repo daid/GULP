@@ -107,28 +107,34 @@ $c .= "<br>";
 $c .= "One for the lunch, lunch for all!<br>";
 $c .= "</body></html>";
 
-//var_dump(mail($to, $subject, $c, $headers));
-$mail = new PHPMailer;
-$mail->isSMTP();
-$mail->Host = 'smtp.online.nl';
-$mail->From = 'gulp@ultimaker.com';
-$mail->FromName = 'GULP';
-$mail->addAddress($roster->email);
-$mail->isHTML(true);
-$mail->Subject = "GULP - You have been chosen! ".$days[weekDay($d, $m, $y)]." $y-$m-$d";
-$mail->Body = $c;
+$subject = "GULP - You have been chosen! ".$days[weekDay($d, $m, $y)]." $y-$m-$d";
+$to = $roster->email;
+$headers = 'MIME-Version: 1.0' . "\r\n";
+$headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
+$headers .= 'From: GULP <gulp@ultimaker.com>' . "\r\n";
+//$mail = new PHPMailer;
+//$mail->isSMTP();
+//$mail->Host = 'smtp.online.nl';
+//$mail->From = 'gulp@ultimaker.com';
+//$mail->FromName = 'GULP';
+//$mail->addAddress($to);
+//$mail->isHTML(true);
+//$mail->Subject = $subject;
+//$mail->Body = $c;
 
-echo "<H1>".$mail->Subject."</H1>";
-echo $mail->Body;
+echo "<H1>".$subject."</H1>";
+echo $c;
 echo "<H1>----------</H1>";
 if ($roster->confirmed)
 {
 	echo "Already send";
 }else{
 	echo "Sending...<br>";
-	if (!$mail->send())
+	//if (!$mail->send())
+	if (!mail($to, $subject, $c, $headers))
+	//if (false)
 	{
-		echo "Error sending mail: " . $mail->ErrorInfo;
+		echo "Error sending mail.";
 	}else{
 		echo "Done.<br>";
 		dbInsert("UPDATE roster SET confirmed = 1 WHERE `date` = '$roster->date'");
